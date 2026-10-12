@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phiếu Học Tập Tương Tác</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #818cf8;
+            --bg-color: #eef2ff;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #4b5563;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --error: #ef4444;
+            --error-light: #fee2e2;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.6; padding: 20px 10px; }
+        .container { max-width: 800px; margin: 0 auto; padding-bottom: 40px;}
+
+        /* Card Style */
+        .card {
+            background-color: var(--card-bg); border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 24px; margin-bottom: 20px; border-top: 5px solid var(--primary);
+        }
+
+        .header-title { text-align: center; color: var(--primary); font-size: 1.5rem; font-weight: 700; margin-bottom: 5px; }
+        .header-subtitle { text-align: center; color: var(--text-muted); font-size: 1.1rem; margin-bottom: 20px; }
+
+        .student-info { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 10px; }
+        .input-group { flex: 1; min-width: 200px; }
+        .input-group label { font-weight: 600; color: var(--primary); display: block; margin-bottom: 5px; }
+        .input-line {
+            width: 100%; border: none; border-bottom: 2px dashed var(--primary-light);
+            padding: 5px 0; font-size: 1rem; outline: none; background: transparent; transition: border-color 0.3s;
+        }
+        .input-line:focus { border-bottom-color: var(--primary); }
+        .input-line:disabled { color: var(--text-muted); cursor: not-allowed; }
+
+        /* Section Titles */
+        .section-title {
+            color: var(--primary); font-size: 1.25rem; font-weight: 700; margin-bottom: 15px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .section-title::before {
+            content: ""; display: inline-block; width: 24px; height: 24px;
+            background-color: var(--primary-light); border-radius: 50%;
+        }
+
+        /* Question Styles */
+        .question { margin-bottom: 20px; }
+        .question-text { font-weight: 600; margin-bottom: 10px; }
+
+        /* Multiple Choice */
+        .options { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        @media (min-width: 600px) { .options { grid-template-columns: 1fr 1fr; } }
+        
+        .option-label {
+            display: flex; align-items: center; padding: 10px 15px;
+            background-color: var(--bg-color); border: 2px solid #e5e7eb; border-radius: 12px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .option-label:hover:not(.disabled) { background-color: #e0e7ff; border-color: var(--primary-light); }
+        .option-label input { margin-right: 10px; accent-color: var(--primary); }
+        .option-label.disabled { cursor: not-allowed; opacity: 0.8; }
+
+        /* True/False */
+        .tf-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .tf-table th, .tf-table td { border: 1px solid #d1d5db; padding: 10px; text-align: left; }
+        .tf-table th { background-color: var(--bg-color); color: var(--primary); }
+        .tf-table td.center { text-align: center; }
+        .tf-label { display: block; width: 100%; height: 100%; cursor: pointer; padding: 5px;}
+        .tf-label.disabled { cursor: not-allowed; }
+
+        /* Matching */
+        .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px; }
+        .match-col { background: var(--bg-color); padding: 15px; border-radius: 12px; }
+        .match-item { margin-bottom: 10px; }
+        .match-answer-box { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 15px; }
+        .match-answer-box input {
+            width: 60px; text-align: center; border: 2px solid var(--primary-light);
+            border-radius: 8px; padding: 5px; outline: none; font-size: 1.1rem; font-weight: bold;
+        }
+
+        /* Drag and Drop Styles */
+        .dnd-container { display: flex; flex-direction: column; gap: 20px; }
+        .drag-pool {
+            display: flex; flex-wrap: wrap; gap: 10px; padding: 15px;
+            background-color: var(--bg-color); border-radius: 12px; min-height: 80px;
+            justify-content: center; align-items: center; border: 2px dashed var(--primary-light);
+        }
+        .drag-item {
+            background-color: var(--primary); color: white; padding: 10px 20px;
+            border-radius: 8px; font-weight: 600; cursor: grab; user-select: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); touch-action: none;
+            transition: transform 0.2s, opacity 0.2s; z-index: 10;
+        }
+        .drag-item:active { cursor: grabbing; transform: scale(1.05); }
+        .drag-item.locked {
+            background-color: var(--success); cursor: default; box-shadow: none; transform: none;
+        }
+
+        .drop-targets { display: flex; flex-direction: column; gap: 10px; }
+        .drop-zone {
+            display: flex; justify-content: space-between; align-items: center;
+            background-color: #f9fafb; border: 2px solid #e5e7eb; border-radius: 12px;
+            padding: 10px 15px; gap: 15px;
+        }
+        .drop-zone-text { flex: 1; font-size: 0.95rem; }
+        .drop-slot {
+            width: 150px; height: 44px; border: 2px dashed #9ca3af; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; background: #fff;
+        }
+        @media (max-width: 600px) {
+            .drop-zone { flex-direction: column; text-align: center; }
+            .drop-slot { width: 100%; margin-top: 10px; }
+            .drag-item { padding: 8px 12px; font-size: 0.9rem; }
+        }
+
+        /* Validation Colors & Animations */
+        .is-correct { background-color: var(--success-light) !important; border-color: var(--success) !important; color: #065f46; }
+        .is-incorrect { background-color: var(--error-light) !important; border-color: var(--error) !important; color: #991b1b; }
+        .correct-text { color: var(--success); font-weight: bold; margin-left: 10px; font-size: 0.9rem;}
+        
+        .celebration-msg {
+            position: fixed; color: var(--success); font-weight: bold; font-size: 1.2rem;
+            pointer-events: none; z-index: 9999; text-shadow: 1px 1px 2px #fff;
+            animation: floatUp 1s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.2); opacity: 0; }
+        }
+
+        /* Summary Box */
+        .summary-box {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white; border-radius: 16px; padding: 20px; margin-bottom: 20px;
+        }
+        .summary-box h3 { margin-bottom: 10px; font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 5px; }
+        .summary-box ul { padding-left: 20px; }
+        .summary-box li { margin-bottom: 8px; }
+
+        /* Buttons */
+        .btn-group { display: flex; gap: 15px; margin-top: 20px; }
+        .btn {
+            flex: 1; text-align: center; padding: 15px; font-size: 1.1rem; font-weight: bold;
+            border: none; border-radius: 12px; cursor: pointer; transition: background 0.3s, transform 0.1s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-submit { background-color: var(--primary); color: white; }
+        .btn-submit:hover { background-color: #4338ca; }
+        .btn-reset { background-color: #e5e7eb; color: var(--text-main); }
+        .btn-reset:hover { background-color: #d1d5db; }
+        
+        #result-box { display: none; text-align: center; border-top-color: var(--success); margin-top: 20px; animation: fadeIn 0.5s;}
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<!-- CẤU TRÚC GIAO DIỆN (HTML) - ĐÃ LÀM TRỐNG ĐỂ CHỨA DỮ LIỆU ĐỘNG -->
+<div class="container" id="app">
+    <!-- Header -->
+    <div class="card" id="header-container"></div>
+    
+    <!-- Mục tiêu -->
+    <div class="card" id="objectives-container"></div>
+
+    <!-- I. Trắc nghiệm -->
+    <div class="card" id="mcq-container"></div>
+
+    <!-- II. Đúng Sai -->
+    <div class="card" id="tf-container"></div>
+
+    <!-- III. Điền khuyết -->
+    <div class="card" id="fill-container"></div>
+
+    <!-- IV. Nối cột -->
+    <div class="card" id="match-container"></div>
+
+    <!-- V. Kéo thả -->
+    <div class="card" id="dnd-container"></div>
+
+    <!-- VI. Ghi nhớ -->
+    <div class="summary-box" id="summary-container"></div>
+
+    <!-- Controls -->
+    <div class="btn-group">
+        <button class="btn btn-reset" onclick="lamLai()">LÀM LẠI</button>
+        <button class="btn btn-submit" onclick="chamDiem()">NỘP BÀI VÀ CHẤM ĐIỂM</button>
+    </div>
+
+    <!-- Result Box -->
+    <div id="result-box" class="card">
+        <h2 class="section-title" style="color: var(--success); justify-content: center;">Kết quả bài làm</h2>
+        <p id="score-text" style="font-size: 1.5rem; font-weight: bold; margin: 10px 0;"></p>
+        <p id="feedback-text" style="color: var(--text-muted);"></p>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // KHU VỰC 1: DỮ LIỆU BÀI HỌC (CHỈ CHỈNH SỬA Ở ĐÂY)
+    // ==========================================
+    const lessonData = {
+        header: {
+            title: "PHIẾU HỌC TẬP HÓA HỌC 10",
+            subtitle: "Bài 5: Cấu tạo của Bảng Tuần hoàn các nguyên tố hóa học"
+        },
+        objectives: {
+            title: "Mục tiêu bài học",
+            items: [
+                "Mô tả được cấu tạo của bảng tuần hoàn (ô, chu kì, nhóm).",
+                "Nêu được nguyên tắc sắp xếp các nguyên tố hóa học.",
+                "Phân loại được nguyên tố dựa theo cấu hình electron và tính chất."
+            ]
+        },
+        multipleChoice: {
+            title: "I. Trắc nghiệm khách quan",
+            questions: [
+                {
+                    id: "q1",
+                    text: "Câu 1. Các nguyên tố trong bảng tuần hoàn hiện đại được sắp xếp theo nguyên tắc nào sau đây?",
+                    options: {
+                        A: "Chiều tăng dần nguyên tử khối.",
+                        B: "Cùng số lớp electron xếp cùng cột.",
+                        C: "Chiều tăng dần điện tích hạt nhân.",
+                        D: "Cùng số electron hóa trị xếp cùng hàng."
+                    },
+                    answer: "C"
+                },
+                {
+                    id: "q2",
+                    text: "Câu 2. Chu kì là dãy các nguyên tố mà nguyên tử của chúng có cùng:",
+                    options: {
+                        A: "số electron hóa trị.",
+                        B: "số lớp electron.",
+                        C: "số điện tích hạt nhân.",
+                        D: "số neutron."
+                    },
+                    answer: "B"
+                },
+                {
+                    id: "q3",
+                    text: "Câu 3. Nguyên tử các nguyên tố trong cùng một nhóm A có đặc điểm chung nào?",
+                    options: {
+                        A: "Cùng số lớp electron.",
+                        B: "Cùng số electron hóa trị.",
+                        C: "Đều là nguyên tố kim loại.",
+                        D: "Đều thuộc nguyên tố d."
+                    },
+                    answer: "B"
+                }
+            ]
+        },
+        trueFalse: {
+            title: "II. Chọn Đúng / Sai",
+            instruction: "Đọc các phát biểu sau và đánh dấu vào ô tương ứng:",
+            questions: [
+                { id: "tf1", text: "1. Bảng tuần hoàn hiện nay có 7 chu kì và 18 cột.", answer: "T" },
+                { id: "tf2", text: "2. Mendeleev sắp xếp các nguyên tố theo chiều điện tích hạt nhân tăng dần.", answer: "F" },
+                { id: "tf3", text: "3. Số thứ tự của ô nguyên tố đúng bằng số hiệu nguyên tử.", answer: "T" },
+                { id: "tf4", text: "4. Các nguyên tố nhóm B gồm nguyên tố d và f, đều là kim loại chuyển tiếp.", answer: "T" }
+            ]
+        },
+        fillInBlanks: {
+            title: "III. Điền từ/cụm từ thích hợp",
+            instruction: "Sử dụng các từ khóa sau: <em>số lớp electron, cột, điện tích hạt nhân, electron hóa trị</em>.",
+            // Sử dụng cú pháp {id_của_ô_trống} để chèn ô input
+            content: `
+                1. Các nguyên tố được sắp xếp theo chiều tăng dần của {fill1} nguyên tử.<br>
+                2. Các nguyên tố có cùng {fill2} trong nguyên tử được xếp thành một hàng (chu kì).<br>
+                3. Các nguyên tố có cùng số {fill3} được xếp thành một {fill4} (nhóm).
+            `,
+            answers: {
+                fill1: { valid: ['điện tích hạt nhân'], width: '150px' },
+                fill2: { valid: ['số lớp electron', 'số lớp e'], width: '150px' },
+                fill3: { valid: ['electron hóa trị', 'e hóa trị'], width: '150px' },
+                fill4: { valid: ['cột'], width: '80px' }
+            }
+        },
+        matching: {
+            title: "IV. Nối cột A với cột B",
+            colATitle: "Cột A (Phân loại)",
+            colBTitle: "Cột B (Đặc điểm)",
+            colA: [
+                { id: "A", text: "A. Nhóm IA, IIA, IIIA (trừ H, B)" },
+                { id: "B", text: "B. Nhóm VA, VIA, VIIA" },
+                { id: "C", text: "C. Nhóm VIIIA" },
+                { id: "D", text: "D. Nguyên tố s, p" }
+            ],
+            colB: [
+                { id: "1", text: "1. Khí hiếm" },
+                { id: "2", text: "2. Phi kim" },
+                { id: "3", text: "3. Thuộc nhóm A" },
+                { id: "4", text: "4. Kim loại" }
+            ],
+            answers: { "A": "4", "B": "2", "C": "1", "D": "3" }
+        },
+        dragDrop: {
+            title: "V. Thử thách Kéo - Thả",
+            instruction: "Kéo các thẻ màu xanh ở trên và thả vào đúng ô trống tương ứng bên dưới (Có thể dùng tay vuốt trên điện thoại).",
+            items: [
+                { id: "item-ont", text: "Ô nguyên tố" },
+                { id: "item-chuki", text: "Chu kì" },
+                { id: "item-nhom", text: "Nhóm" },
+                { id: "item-df", text: "Nguyên tố d, f" }
+            ],
+            targets: [
+                { accept: "item-ont", text: "Cho biết số hiệu nguyên tử, kí hiệu, tên nguyên tố và nguyên tử khối." },
+                { accept: "item-chuki", text: "Gồm các nguyên tố có cùng <b>số lớp electron</b> xếp thành một hàng." },
+                { accept: "item-nhom", text: "Gồm các nguyên tố có <b>cấu hình electron tương tự nhau</b> xếp thành một cột." },
+                { accept: "item-df", text: "Thuộc các <b>nhóm B</b>, đều là các kim loại chuyển tiếp." }
+            ]
+        },
+        summary: {
+            title: "💡 GHI NHỚ NHANH",
+            points: [
+                "<strong>Nguyên tắc:</strong> Tăng dần Z; Cùng số lớp e &rarr; Chu kì; Cùng số e hóa trị &rarr; Nhóm.",
+                "<strong>Số thứ tự:</strong> STT Ô = Số hiệu nguyên tử ($Z$); STT Chu kì = Số lớp electron; STT Nhóm A = Số electron hóa trị.",
+                "<strong>Khối s, p:</strong> Nhóm A. <strong>Khối d, f:</strong> Nhóm B (Kim loại chuyển tiếp)."
+            ]
+        }
+    };
+
+    // ==========================================
+    // KHU VỰC 2: LOGIC HIỂN THỊ GIAO DIỆN TỪ DỮ LIỆU
+    // ==========================================
+    window.onload = function() {
+        renderApp();
+    };
+
+    function renderApp() {
+        renderHeader();
+        renderObjectives();
+        renderMultipleChoice();
+        renderTrueFalse();
+        renderFillInBlanks();
+        renderMatching();
+        renderDragDrop();
+        renderSummary();
+        
+        // Khởi tạo tính năng kéo thả sau khi HTML được render xong
+        initDragAndDrop();
+    }
+
+    function renderHeader() {
+        const html = `
+            <h1 class="header-title">${lessonData.header.title}</h1>
+            <h2 class="header-subtitle">${lessonData.header.subtitle}</h2>
+            <div class="student-info">
+                <div class="input-group">
+                    <label for="fullname">Họ và tên học sinh:</label>
+                    <input type="text" id="fullname" class="input-line" placeholder="Nhập họ tên...">
+                </div>
+                <div class="input-group" style="flex: 0.5;">
+                    <label for="class">Lớp:</label>
+                    <input type="text" id="class" class="input-line" placeholder="Nhập lớp...">
+                </div>
+            </div>`;
+        document.getElementById('header-container').innerHTML = html;
+    }
+
+    function renderObjectives() {
+        let itemsHtml = lessonData.objectives.items.map(item => `<li>${item}</li>`).join('');
+        const html = `
+            <h2 class="section-title">${lessonData.objectives.title}</h2>
+            <ul style="padding-left: 20px; color: var(--text-muted);">
+                ${itemsHtml}
+            </ul>`;
+        document.getElementById('objectives-container').innerHTML = html;
+    }
+
+    function renderMultipleChoice() {
+        let questionsHtml = lessonData.multipleChoice.questions.map(q => {
+            let optionsHtml = '';
+            for(let key in q.options) {
+                optionsHtml += `
+                    <label class="option-label" id="lbl-${q.id}-${key}">
+                        <input type="radio" name="${q.id}" value="${key}"> ${q.options[key]}
+                    </label>`;
+            }
+            return `
+                <div class="question">
+                    <p class="question-text">${q.text}</p>
+                    <div class="options">${optionsHtml}</div>
+                </div>`;
+        }).join('');
+
+        const html = `
+            <h2 class="section-title">${lessonData.multipleChoice.title}</h2>
+            ${questionsHtml}`;
+        document.getElementById('mcq-container').innerHTML = html;
+    }
+
+    function renderTrueFalse() {
+        let rowsHtml = lessonData.trueFalse.questions.map(q => `
+            <tr>
+                <td>${q.text}</td>
+                <td class="center" id="td-${q.id}-T"><label class="tf-label"><input type="radio" name="${q.id}" value="T"></label></td>
+                <td class="center" id="td-${q.id}-F"><label class="tf-label"><input type="radio" name="${q.id}" value="F"></label></td>
+            </tr>`).join('');
+            
+        const html = `
+            <h2 class="section-title">${lessonData.trueFalse.title}</h2>
+            <p style="margin-bottom: 10px;">${lessonData.trueFalse.instruction}</p>
+            <table class="tf-table">
+                <thead><tr><th>Phát biểu</th><th width="70" class="center">Đúng</th><th width="70" class="center">Sai</th></tr></thead>
+                <tbody>${rowsHtml}</tbody>
+            </table>`;
+        document.getElementById('tf-container').innerHTML = html;
+    }
+
+    function renderFillInBlanks() {
+        let content = lessonData.fillInBlanks.content;
+        for(let id in lessonData.fillInBlanks.answers) {
+            const width = lessonData.fillInBlanks.answers[id].width;
+            const inputHtml = `<span class="fill-wrapper"><input type="text" id="${id}" class="input-line" style="width: ${width}; display: inline-block; text-align: center;"></span>`;
+            content = content.replace(`{${id}}`, inputHtml);
+        }
+
+        const html = `
+            <h2 class="section-title">${lessonData.fillInBlanks.title}</h2>
+            <p class="question-text">${lessonData.fillInBlanks.instruction}</p>
+            <div style="line-height: 2.5; margin-top: 15px;">${content}</div>`;
+        document.getElementById('fill-container').innerHTML = html;
+    }
+
+    function renderMatching() {
+        let colAHtml = lessonData.matching.colA.map(item => `<div class="match-item">${item.text}</div>`).join('');
+        let colBHtml = lessonData.matching.colB.map(item => `<div class="match-item">${item.text}</div>`).join('');
+        
+        let answerInputs = lessonData.matching.colA.map(item => 
+            `${item.id} - <span class="fill-wrapper"><input type="text" id="match${item.id}" maxlength="1" placeholder="?"></span>`
+        ).join('&nbsp;&nbsp;&nbsp;');
+
+        const html = `
+            <h2 class="section-title">${lessonData.matching.title}</h2>
+            <div class="match-grid">
+                <div class="match-col"><strong>${lessonData.matching.colATitle}</strong>${colAHtml}</div>
+                <div class="match-col"><strong>${lessonData.matching.colBTitle}</strong>${colBHtml}</div>
+            </div>
+            <p style="text-align: center; font-weight: 600;">Điền số thích hợp:</p>
+            <div class="match-answer-box">${answerInputs}</div>`;
+        document.getElementById('match-container').innerHTML = html;
+    }
+
+    function renderDragDrop() {
+        let itemsHtml = lessonData.dragDrop.items.map(item => 
+            `<div class="drag-item" data-id="${item.id}">${item.text}</div>`
+        ).join('');
+        
+        let targetsHtml = lessonData.dragDrop.targets.map(target => `
+            <div class="drop-zone" data-accept="${target.accept}">
+                <div class="drop-zone-text">${target.text}</div>
+                <div class="drop-slot"></div>
+            </div>`).join('');
+
+        const html = `
+            <h2 class="section-title">${lessonData.dragDrop.title}</h2>
+            <p style="margin-bottom: 15px;">${lessonData.dragDrop.instruction}</p>
+            <div class="dnd-container">
+                <div class="drag-pool" id="drag-pool">${itemsHtml}</div>
+                <div class="drop-targets">${targetsHtml}</div>
+            </div>`;
+        document.getElementById('dnd-container').innerHTML = html;
+    }
+
+    function renderSummary() {
+        let pointsHtml = lessonData.summary.points.map(p => `<li>${p}</li>`).join('');
+        const html = `
+            <h3>${lessonData.summary.title}</h3>
+            <ul>${pointsHtml}</ul>`;
+        document.getElementById('summary-container').innerHTML = html;
+    }
+
+    // ==========================================
+    // KHU VỰC 3: LOGIC HOẠT ĐỘNG (KÉO THẢ, CHẤM ĐIỂM)
+    // ==========================================
+    let activeDragItem = null;
+    let ghostElement = null;
+    let startX, startY;
+
+    function initDragAndDrop() {
+        const dragItems = document.querySelectorAll('.drag-item');
+        dragItems.forEach(item => {
+            item.addEventListener('mousedown', handleDragStart);
+            item.addEventListener('touchstart', handleDragStart, { passive: false });
+        });
+    }
+
+    function handleDragStart(e) {
+        if (e.target.classList.contains('locked')) return;
+        activeDragItem = e.target;
+        e.preventDefault();
+
+        const isTouch = e.type.includes('touch');
+        const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+        const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+
+        const rect = activeDragItem.getBoundingClientRect();
+        ghostElement = activeDragItem.cloneNode(true);
+        ghostElement.style.position = 'fixed';
+        ghostElement.style.left = rect.left + 'px';
+        ghostElement.style.top = rect.top + 'px';
+        ghostElement.style.width = rect.width + 'px';
+        ghostElement.style.margin = '0';
+        ghostElement.style.zIndex = '1000';
+        ghostElement.style.pointerEvents = 'none';
+        ghostElement.style.boxShadow = '0 10px 20px rgba(0,0,0,0.2)';
+        
+        document.body.appendChild(ghostElement);
+        activeDragItem.style.opacity = '0.3';
+
+        startX = clientX;
+        startY = clientY;
+
+        if (isTouch) {
+            document.addEventListener('touchmove', handleDragMove, { passive: false });
+            document.addEventListener('touchend', handleDragEnd);
+        } else {
+            document.addEventListener('mousemove', handleDragMove);
+            document.addEventListener('mouseup', handleDragEnd);
+        }
+    }
+
+    function handleDragMove(e) {
+        if (!ghostElement) return;
+        e.preventDefault();
+        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+        ghostElement.style.transform = `translate(${dx}px, ${dy}px) scale(1.05)`;
+    }
+
+    function handleDragEnd(e) {
+        if (!ghostElement || !activeDragItem) return;
+
+        const isTouch = e.type.includes('touch');
+        const clientX = isTouch ? e.changedTouches[0].clientX : e.clientX;
+        const clientY = isTouch ? e.changedTouches[0].clientY : e.clientY;
+
+        document.removeEventListener('mousemove', handleDragMove);
+        document.removeEventListener('touchmove', handleDragMove);
+        document.removeEventListener('mouseup', handleDragEnd);
+        document.removeEventListener('touchend', handleDragEnd);
+
+        const dropTarget = document.elementFromPoint(clientX, clientY);
+        const dropZone = dropTarget ? dropTarget.closest('.drop-zone') : null;
+
+        if (dropZone && dropZone.dataset.accept === activeDragItem.dataset.id) {
+            const slot = dropZone.querySelector('.drop-slot');
+            if (slot.children.length === 0) {
+                slot.appendChild(activeDragItem);
+                activeDragItem.classList.add('locked');
+                activeDragItem.style.opacity = '1';
+                showCelebration(clientX, clientY);
+            } else {
+                activeDragItem.style.opacity = '1';
+            }
+        } else {
+            activeDragItem.style.opacity = '1';
+        }
+
+        ghostElement.remove();
+        ghostElement = null;
+        activeDragItem = null;
+    }
+
+    function showCelebration(x, y) {
+        const msg = document.createElement('div');
+        msg.textContent = 'Chính xác! 🎉';
+        msg.className = 'celebration-msg';
+        msg.style.left = (x - 40) + 'px';
+        msg.style.top = (y - 20) + 'px';
+        document.body.appendChild(msg);
+        setTimeout(() => msg.remove(), 1000);
+    }
+
+    // URL của Google Apps Script (Thay thế link của bạn vào đây sau khi Deploy)
+    const GOOGLE_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz5euzAc-JHdussOoMza0Cmu3EW2jNFrfLoXK_q0dyG1goAupgkj9mgbPx6rnogSiOoNg/exec";
+
+    // --- HÀM CHẤM ĐIỂM VÀ GỬI DỮ LIỆU ---
+    async function chamDiem() {
+        let correctCount = 0;
+        let incorrectCount = 0;
+        let unansweredCount = 0;
+        
+        const totalQuestions = 
+            lessonData.multipleChoice.questions.length + 
+            lessonData.trueFalse.questions.length + 
+            Object.keys(lessonData.fillInBlanks.answers).length + 
+            Object.keys(lessonData.matching.answers).length + 
+            lessonData.dragDrop.targets.length;
+
+        disableAllInputs(true);
+        const submitBtn = document.querySelector('.btn-submit');
+        const originalBtnText = submitBtn.innerText;
+        submitBtn.innerText = "Đang chấm & lưu điểm...";
+
+        // 1. Trắc nghiệm
+        lessonData.multipleChoice.questions.forEach(q => {
+            const checked = document.querySelector(`input[name="${q.id}"]:checked`);
+            const correctLabel = document.getElementById(`lbl-${q.id}-${q.answer}`);
+            if (checked) {
+                if (checked.value === q.answer) {
+                    correctCount++;
+                    checked.parentElement.classList.add('is-correct');
+                } else {
+                    incorrectCount++;
+                    checked.parentElement.classList.add('is-incorrect');
+                    correctLabel.classList.add('is-correct');
+                }
+            } else {
+                unansweredCount++;
+                correctLabel.classList.add('is-correct');
+            }
+        });
+
+        // 2. Đúng Sai
+        lessonData.trueFalse.questions.forEach(q => {
+            const checked = document.querySelector(`input[name="${q.id}"]:checked`);
+            const correctTd = document.getElementById(`td-${q.id}-${q.answer}`);
+            if (checked) {
+                if (checked.value === q.answer) {
+                    correctCount++;
+                    checked.closest('td').classList.add('is-correct');
+                } else {
+                    incorrectCount++;
+                    checked.closest('td').classList.add('is-incorrect');
+                    correctTd.classList.add('is-correct');
+                }
+            } else {
+                unansweredCount++;
+                correctTd.classList.add('is-correct');
+            }
+        });
+
+        // 3. Điền khuyết
+        for(let id in lessonData.fillInBlanks.answers) {
+            const validArr = lessonData.fillInBlanks.answers[id].valid;
+            const status = checkTextAnswer(id, validArr);
+            if(status === 'correct') correctCount++;
+            else if(status === 'incorrect') incorrectCount++;
+            else unansweredCount++;
+        }
+
+        // 4. Nối cột
+        for(let idA in lessonData.matching.answers) {
+            const ansB = lessonData.matching.answers[idA];
+            const status = checkTextAnswer(`match${idA}`, [ansB]);
+            if(status === 'correct') correctCount++;
+            else if(status === 'incorrect') incorrectCount++;
+            else unansweredCount++;
+        }
+
+        // 5. Kéo thả 
+        const lockedItems = document.querySelectorAll('.drag-item.locked');
+        correctCount += lockedItems.length;
+        unansweredCount += (lessonData.dragDrop.targets.length - lockedItems.length);
+
+        // Hiển thị kết quả
+        const resultBox = document.getElementById('result-box');
+        const scoreText = document.getElementById('score-text');
+        const feedbackText = document.getElementById('feedback-text');
+
+        const finalScore = ((correctCount / totalQuestions) * 10).toFixed(1);
+        scoreText.innerHTML = `Bạn đạt <span style="color: var(--error); font-size: 2rem;">${finalScore}</span> / 10 điểm`;
+        
+        if (finalScore >= 8) feedbackText.innerText = "Tuyệt vời! Bạn nắm kiến thức rất chắc.";
+        else if (finalScore >= 5) feedbackText.innerText = "Làm tốt lắm! Hãy xem lại các đáp án màu đỏ để rút kinh nghiệm nhé.";
+        else feedbackText.innerText = "Chưa đạt yêu cầu rồi. Hãy xem lại kỹ phần đáp án màu xanh và làm lại nhé!";
+
+        resultBox.style.display = 'block';
+        resultBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // --- FETCH GỬI DỮ LIỆU ĐI ---
+        const studentName = document.getElementById('fullname').value.trim();
+        const studentClass = document.getElementById('class').value.trim();
+
+        const payload = {
+            name: studentName,
+            className: studentClass,
+            score: finalScore,
+            correct: correctCount,
+            incorrect: incorrectCount,
+            unanswered: unansweredCount,
+            total: totalQuestions
+        };
+
+        if (GOOGLE_WEB_APP_URL !== "ĐIỀN_LINK_WEB_APP_CỦA_BẠN_VÀO_ĐÂY") {
+            try {
+                // Dùng text/plain để tránh lỗi chặn liên kết (CORS Preflight)
+                await fetch(GOOGLE_WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+                feedbackText.innerText += " (✅ Đã tự động lưu điểm cho giáo viên).";
+            } catch (error) {
+                console.error('Lỗi gửi dữ liệu:', error);
+                feedbackText.innerText += " (❌ Có lỗi mạng khi gửi điểm về máy chủ).";
+            }
+        } else {
+            console.log("Cảnh báo: Chưa cài đặt Link Google Web App. Dữ liệu chạy offline.");
+        }
+        
+        submitBtn.innerText = originalBtnText;
+    }
+
+    function checkTextAnswer(id, validAnswers) {
+        const input = document.getElementById(id);
+        if(!input) return 'unanswered';
+        const val = input.value.toLowerCase().trim();
+        const wrapper = input.parentElement;
+        
+        const oldSpan = wrapper.querySelector('.correct-text');
+        if(oldSpan) oldSpan.remove();
+
+        if (val === '') {
+            input.classList.add('is-incorrect');
+            input.style.borderBottomColor = 'var(--error)';
+            const correctSpan = document.createElement('span');
+            correctSpan.className = 'correct-text';
+            correctSpan.innerText = `(Đáp án: ${validAnswers[0]})`;
+            wrapper.appendChild(correctSpan);
+            return 'unanswered'; // Trả về trạng thái chưa làm
+        }
+
+        if (validAnswers.includes(val)) {
+            input.classList.add('is-correct');
+            input.style.borderBottomColor = 'var(--success)';
+            input.style.color = 'var(--success)';
+            return 'correct';
+        } else {
+            input.classList.add('is-incorrect');
+            input.style.borderBottomColor = 'var(--error)';
+            input.style.color = 'var(--error)';
+            const correctSpan = document.createElement('span');
+            correctSpan.className = 'correct-text';
+            correctSpan.innerText = `(Đáp án: ${validAnswers[0]})`;
+            wrapper.appendChild(correctSpan);
+            return 'incorrect';
+        }
+    }
+
+    function disableAllInputs(disabled) {
+        document.querySelectorAll('input').forEach(inp => inp.disabled = disabled);
+        document.querySelectorAll('.option-label, .tf-label').forEach(lbl => {
+            if(disabled) lbl.classList.add('disabled');
+            else lbl.classList.remove('disabled');
+        });
+        document.querySelectorAll('.drag-item').forEach(item => {
+            if (disabled) item.classList.add('locked');
+        });
+    }
+
+    // --- HÀM LÀM LẠI ---
+    function lamLai() {
+        disableAllInputs(false);
+
+        document.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
+        document.querySelectorAll('.is-correct, .is-incorrect').forEach(el => {
+            el.classList.remove('is-correct', 'is-incorrect');
+            el.style.borderBottomColor = ''; 
+            el.style.color = '';
+        });
+
+        document.querySelectorAll('input[type="text"]').forEach(txt => {
+            if(txt.id !== 'fullname' && txt.id !== 'class') txt.value = ''; 
+        });
+
+        document.querySelectorAll('.correct-text').forEach(span => span.remove());
+
+        const dragPool = document.getElementById('drag-pool');
+        document.querySelectorAll('.drag-item').forEach(item => {
+            item.classList.remove('locked');
+            dragPool.appendChild(item); 
+        });
+
+        document.getElementById('result-box').style.display = 'none';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>
+
+</body>
+</html>
